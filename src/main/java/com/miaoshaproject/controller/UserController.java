@@ -8,8 +8,10 @@ import com.miaoshaproject.error.EmBusinessError;
 import com.miaoshaproject.response.CommonReturnType;
 import com.miaoshaproject.service.UserService;
 import com.miaoshaproject.service.model.UserModel;
+import com.miaoshaproject.utils.RedisOperator;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import sun.misc.BASE64Encoder;
@@ -30,6 +32,12 @@ public class UserController extends BaseController {
 
     @Autowired
     private HttpServletRequest httpServletRequest;
+
+    @Autowired
+    private StringRedisTemplate strRedis;
+
+    @Autowired
+    private RedisOperator redis;
 
     //用户登录接口
     @RequestMapping(value = "/login",method = {RequestMethod.POST},consumes = {CONTENT_TYPE_FORMED})
@@ -108,7 +116,10 @@ public class UserController extends BaseController {
         httpServletRequest.getSession().setAttribute(telphone,otpCode);
 
         //将otp验证码通过短信发送给用户，省略
-        System.out.println("telphone = " + telphone + " & otpCode = "+otpCode);
+
+        redis.set(telphone,otpCode);
+
+        System.out.println("telphone = " + telphone + " & otpCode = "+redis.get(telphone));
 
         return CommonReturnType.create(null);
     }
