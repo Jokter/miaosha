@@ -115,12 +115,21 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Transactional
     public boolean decreaseStock(Integer itemId, Integer amount) throws BusinessException {
-        return false;
+        int affectedRow = itemStockDoMapper.decreaseStock(itemId, amount);
+        if(affectedRow>0){
+            //更新成功
+            return true;
+        }else{
+            //更新失败
+            return false;
+        }
     }
 
     @Override
+    @Transactional
     public void increaseSales(Integer itemId, Integer amount) throws BusinessException {
-
+        itemDoMapper.increaseSales(itemId,amount);
     }
 }

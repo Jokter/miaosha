@@ -112,9 +112,6 @@ public class UserController extends BaseController {
         randomInt += 10000;
         String otpCode = String.valueOf(randomInt);
 
-        //将otp验证码和用户手机号关联,使用httpsession的方式绑定它的手机号和otp
-        httpServletRequest.getSession().setAttribute(telphone,otpCode);
-
         //将otp验证码通过短信发送给用户，省略
 
         redis.set(telphone,otpCode);
