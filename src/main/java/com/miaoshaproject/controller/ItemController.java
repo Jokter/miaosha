@@ -1,19 +1,24 @@
 package com.miaoshaproject.controller;
 
+import com.alibaba.fastjson.JSONObject;
 import com.miaoshaproject.controller.viewobject.BaseController;
 import com.miaoshaproject.controller.viewobject.ItemVO;
 import com.miaoshaproject.error.BusinessException;
 import com.miaoshaproject.response.CommonReturnType;
+import com.miaoshaproject.service.CacheService;
 import com.miaoshaproject.service.ItemService;
+import com.miaoshaproject.service.PromoService;
 import com.miaoshaproject.service.model.ItemModel;
 import org.joda.time.format.DateTimeFormat;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Controller("item")
@@ -23,6 +28,15 @@ public class ItemController extends BaseController {
 
     @Autowired
     private ItemService itemService;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
+
+    @Autowired
+    private PromoService promoService;
+
+    @Autowired
+    private CacheService cacheService;
 
     //创建商品的controller
     @RequestMapping(value = "/create",method = {RequestMethod.POST},consumes = {CONTENT_TYPE_FORMED})
@@ -68,7 +82,23 @@ public class ItemController extends BaseController {
     @RequestMapping(value = "/get", method = {RequestMethod.GET})
     @ResponseBody
     public CommonReturnType getItem(@RequestParam(name = "id") Integer id) throws BusinessException {
-        ItemModel itemModel = itemService.getItemById(id);
+
+        ItemModel itemModel = null;
+        //先取本地缓存
+        itemModel = (ItemModel) cacheService.getFromCommonCache("item_" + id);
+        if (itemModel == null) {
+            //根据商品的id到redis中获取
+            itemModel = (ItemModel) redisTemplate.opsForValue().get("item_" + id);
+            //若redis不存在itemModel，访问下游service
+            if(itemModel == null) {
+                itemModel = itemService.getItemById(id);
+                //设置itemModel到redis
+                redisTemplate.opsForValue().set("item_" + id, itemModel);
+                redisTemplate.expire("item_" + id, 10, TimeUnit.MINUTES);
+            }
+            //填充本地缓存
+            cacheService.setCommonCache("item_" + id, itemModel);
+        }
 
         ItemVO itemVO = convertVOFromModel(itemModel);
 
@@ -87,6 +117,14 @@ public class ItemController extends BaseController {
         }).collect(Collectors.toList());
 
         return CommonReturnType.create(itemVOList);
+    }
+
+    //发布活动
+    @RequestMapping(value = "/promo/publish", method = {RequestMethod.GET})
+    @ResponseBody
+    public CommonReturnType publishPromo(@RequestParam(name = "id") Integer id) throws BusinessException {
+        promoService.publishPromo(id);
+        return CommonReturnType.create(null);
     }
 
 }

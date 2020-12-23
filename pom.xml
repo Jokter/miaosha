@@ -81,6 +81,17 @@
       <artifactId>spring-data-redis</artifactId>
       <version>2.1.10.RELEASE</version>
     </dependency>
+    <!-- 引入 json 依赖 -->
+    <dependency>
+      <groupId>com.alibaba</groupId>
+      <artifactId>fastjson</artifactId>
+      <version>1.2.67</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>18.0</version>
+    </dependency>
   </dependencies>
 
   <build>

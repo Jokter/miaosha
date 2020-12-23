@@ -1,9 +1,10 @@
 package com.miaoshaproject.service.model;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 //用户下单的交易模型
-public class OrderModel {
+public class OrderModel implements Serializable {
     //交易单号，例如2019052100001212，使用string类型
     private String id;
 

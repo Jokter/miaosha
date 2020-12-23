@@ -11,7 +11,7 @@ import com.miaoshaproject.service.model.UserModel;
 import com.miaoshaproject.utils.RedisOperator;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import sun.misc.BASE64Encoder;
@@ -21,6 +21,8 @@ import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Controller("user")
 @RequestMapping("/user")
@@ -34,10 +36,8 @@ public class UserController extends BaseController {
     private HttpServletRequest httpServletRequest;
 
     @Autowired
-    private StringRedisTemplate strRedis;
+    private RedisTemplate redisTemplate;
 
-    @Autowired
-    private RedisOperator redis;
 
     //用户登录接口
     @RequestMapping(value = "/login",method = {RequestMethod.POST},consumes = {CONTENT_TYPE_FORMED})
@@ -54,10 +54,19 @@ public class UserController extends BaseController {
         UserModel userModel = userService.validateLogin(telphone, this.EncodeByMd5(password));
 
         //将登录凭证加入到用户登录成功的session内
-        this.httpServletRequest.getSession().setAttribute("LOGIN",true);
-        this.httpServletRequest.getSession().setAttribute("LOGIN_USER",userModel);
+//        this.httpServletRequest.getSession().setAttribute("LOGIN",true);
+//        this.httpServletRequest.getSession().setAttribute("LOGIN_USER",userModel);
 
-        return CommonReturnType.create(null);
+        //修改成若用户登录验证成功后将对应的登录信息和登录凭证一起存入redis中
+        //生成登录凭证，UUID
+        String uuidToken = UUID.randomUUID().toString();
+        uuidToken = uuidToken.replace("-", "");
+        //建立token和用户登录态之间的联系
+        redisTemplate.opsForValue().set(uuidToken, userModel);
+        redisTemplate.expire(uuidToken, 1, TimeUnit.HOURS);
+
+        //下发token
+        return CommonReturnType.create(uuidToken);
     }
 
 
@@ -72,7 +81,7 @@ public class UserController extends BaseController {
                                      @RequestParam(name = "password")String password) throws BusinessException, UnsupportedEncodingException, NoSuchAlgorithmException {
          //验证手机号和对应的otp符合
 //         String inSessionOtpCode = (String) this.httpServletRequest.getSession().getAttribute(telphone);
-         String inSessionOtpCode = redis.get(telphone);
+         String inSessionOtpCode = (String) redisTemplate.opsForValue().get(telphone);
          if(!com.alibaba.druid.util.StringUtils.equals(otpCode, inSessionOtpCode)){
              throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"短信验证码不符合");
          }
@@ -115,9 +124,7 @@ public class UserController extends BaseController {
 
         //将otp验证码通过短信发送给用户，省略
 
-        redis.set(telphone,otpCode);
-
-        System.out.println("telphone = " + telphone + " & otpCode = "+redis.get(telphone));
+        redisTemplate.opsForValue().set(telphone, otpCode);
 
         return CommonReturnType.create(null);
     }
