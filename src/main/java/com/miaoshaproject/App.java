@@ -34,15 +34,7 @@ public class App {
     }
 
     public static void main( String[] args ) {
-//        System.out.println( "Hello World!" );
-//        SpringApplication.run(App.class,args);
-
-        HashMap<String, String> map = new HashMap<>();
-        map.put("1", "2");
-        map.put("2", "3");
-        System.out.println(map);
-        map.remove("1");
-        System.out.println(map);
-
+        System.out.println( "Hello World!" );
+        SpringApplication.run(App.class,args);
     }
 }
