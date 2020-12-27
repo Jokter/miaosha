@@ -6,7 +6,6 @@ import com.miaoshaproject.dataobject.ItemDO;
 import com.miaoshaproject.dataobject.ItemStockDO;
 import com.miaoshaproject.error.BusinessException;
 import com.miaoshaproject.error.EmBusinessError;
-import com.miaoshaproject.mq.MqProducer;
 import com.miaoshaproject.service.ItemService;
 import com.miaoshaproject.service.PromoService;
 import com.miaoshaproject.service.model.ItemModel;
@@ -25,9 +24,6 @@ import java.util.stream.Collectors;
 
 @Service
 public class ItemServiceImpl implements ItemService {
-
-    @Autowired
-    private MqProducer mqProducer;
 
     @Autowired
     private ValidatorImpl validator;
@@ -156,26 +152,13 @@ public class ItemServiceImpl implements ItemService {
             return true;
         }else{
             //更新失败
-            increaseStock(itemId, amount);
             return false;
         }
     }
 
     @Override
-    public boolean increaseStock(Integer itemId, Integer amount) throws BusinessException {
-        redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, amount);
-        return true;
-    }
-
-    @Override
-    public boolean asyncDecreaseStock(Integer itemId, Integer amount) {
-        Boolean mqResult = mqProducer.asyncReduceStock(itemId, amount);
-        return mqResult;
-    }
-
-    @Override
     @Transactional
     public void increaseSales(Integer itemId, Integer amount) throws BusinessException {
-        itemDoMapper.increaseSales(itemId, amount);
+        itemDoMapper.increaseSales(itemId,amount);
     }
 }

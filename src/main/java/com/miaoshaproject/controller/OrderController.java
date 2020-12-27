@@ -4,7 +4,6 @@ import com.alibaba.druid.util.StringUtils;
 import com.miaoshaproject.controller.viewobject.BaseController;
 import com.miaoshaproject.error.BusinessException;
 import com.miaoshaproject.error.EmBusinessError;
-import com.miaoshaproject.mq.MqProducer;
 import com.miaoshaproject.response.CommonReturnType;
 import com.miaoshaproject.service.OrderService;
 import com.miaoshaproject.service.model.OrderModel;
@@ -30,9 +29,6 @@ public class OrderController extends BaseController {
     @Autowired
     private RedisTemplate redisTemplate;
 
-    @Autowired
-    private MqProducer mqProducer;
-
     //封装下单请求
     @RequestMapping(value = "/createorder", method = {RequestMethod.POST}, consumes = {CONTENT_TYPE_FORMED})
     @ResponseBody
@@ -56,11 +52,7 @@ public class OrderController extends BaseController {
             throw new BusinessException(EmBusinessError.USER_NOT_LOGIN, "用户还未登录，不能下单");
         }
 
-//        OrderModel orderModel = orderService.createOrder(userModel.getId(), itemId, promoId, amount);
-
-        if(!mqProducer.transactionAsyncReduceStock(userModel.getId(), itemId, promoId, amount)) {
-            throw new BusinessException(EmBusinessError.UNKNOWN_ERROR, "下单失败");
-        }
+        OrderModel orderModel = orderService.createOrder(userModel.getId(), itemId, promoId, amount);
 
         return CommonReturnType.create(null);
     }
