@@ -17,6 +17,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -91,7 +93,19 @@ public class OrderServiceImpl implements OrderService {
         orderDOMapper.insertSelective(orderDO);
 
         //加上商品销量
-        itemService.increaseSales(itemId,amount);
+        itemService.increaseSales(itemId, amount);
+
+//        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+//            @Override
+//            public void afterCommit() {
+//                //异步更新库存
+//                boolean mqResult = itemService.asyncDecreaseStock(itemId, amount);
+//                if (!mqResult) {
+//                    itemService.increaseSales(itemId, amount);
+//                    throw new BusinessException(EmBusinessError.MQ_SEND_FAIL);
+//                }
+//            }
+//        });
 
         //4.返回前端
         return orderModel;

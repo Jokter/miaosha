@@ -6,12 +6,17 @@ import com.miaoshaproject.dataobject.ItemDo;
 import com.miaoshaproject.dataobject.ItemStockDo;
 import com.miaoshaproject.error.BusinessException;
 import com.miaoshaproject.error.EmBusinessError;
+import com.miaoshaproject.mq.MqProducer;
 import com.miaoshaproject.service.ItemService;
 import com.miaoshaproject.service.PromoService;
 import com.miaoshaproject.service.model.ItemModel;
 import com.miaoshaproject.service.model.PromoModel;
 import com.miaoshaproject.validator.ValidationResult;
 import com.miaoshaproject.validator.ValidatorImpl;
+import org.apache.rocketmq.client.exception.MQBrokerException;
+import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.producer.SendResult;
+import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -24,6 +29,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class ItemServiceImpl implements ItemService {
+
+    @Autowired
+    private MqProducer mqProducer;
 
     @Autowired
     private ValidatorImpl validator;
@@ -152,13 +160,26 @@ public class ItemServiceImpl implements ItemService {
             return true;
         }else{
             //更新失败
+            increaseStock(itemId, amount);
             return false;
         }
     }
 
     @Override
+    public boolean increaseStock(Integer itemId, Integer amount) throws BusinessException {
+        redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, amount);
+        return true;
+    }
+
+    @Override
+    public boolean asyncDecreaseStock(Integer itemId, Integer amount) {
+        Boolean mqResult = mqProducer.asyncReduceStock(itemId, amount);
+        return mqResult;
+    }
+
+    @Override
     @Transactional
     public void increaseSales(Integer itemId, Integer amount) throws BusinessException {
-        itemDoMapper.increaseSales(itemId,amount);
+        itemDoMapper.increaseSales(itemId, amount);
     }
 }
