@@ -1,16 +1,13 @@
 package com.miaoshaproject;
 
-import com.miaoshaproject.dao.UserDoMapper;
-import com.miaoshaproject.dataobject.UserDo;
+import com.miaoshaproject.dao.UserDOMapper;
+import com.miaoshaproject.dataobject.UserDO;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.HashMap;
 
 /**
  * Hello world!
@@ -23,12 +20,12 @@ import java.util.HashMap;
 public class App {
 
     @Autowired
-    private UserDoMapper userDoMapper;
+    private UserDOMapper userDoMapper;
 
 
     @RequestMapping("/")
     public String home(){
-        UserDo userDo = userDoMapper.selectByPrimaryKey(1);
+        UserDO userDo = userDoMapper.selectByPrimaryKey(1);
         if(userDo==null){
             return "用户不存在";
         }else{

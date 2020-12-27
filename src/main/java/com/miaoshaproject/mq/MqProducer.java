@@ -45,7 +45,6 @@ public class MqProducer {
         producer = new DefaultMQProducer("producer_group");
         producer.setNamesrvAddr(nameAddr);
         producer.start();
-
         transactionMQProducer = new TransactionMQProducer("transaction_producer_group");
         transactionMQProducer.setNamesrvAddr(nameAddr);
         transactionMQProducer.start();
@@ -95,7 +94,6 @@ public class MqProducer {
         TransactionSendResult transactionSendResult = null;
         try {
             transactionSendResult = transactionMQProducer.sendMessageInTransaction(message, argsMap);
-            System.out.println(transactionSendResult);
         } catch (MQClientException e) {
             e.printStackTrace();
             return false;
